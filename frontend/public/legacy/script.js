@@ -2,7 +2,8 @@
 const STORAGE_KEY = 'trackWiseCourses';
 let courseData = [];
 const AUTH_KEY = 'trackWiseAuthUser';
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = '';
+const API_ORIGIN = 'http://localhost:3000';
 const DEADLINE_NOTIFICATION_WINDOW_DAYS = 3;
 const DEADLINE_NOTIFY_KEY = 'trackWiseDeadlineNotifications';
 
@@ -211,17 +212,19 @@ const buildQuery = (params = {}) => {
 };
 
 async function apiGetUsers() {
-    const res = await fetch(`${API_BASE}/users`, {
+    const res = await fetch(`${API_BASE}/api/users`, {
         headers: getAuthHeaders(),
+        credentials: 'include',
     });
     if (!res.ok) throw new Error('Could not fetch users');
     return res.json();
 }
 
 async function apiCreateUser(userPayload) {
-    const res = await fetch(`${API_BASE}/auth/register`, {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
         method: 'POST',
         headers: getJsonHeaders(),
+        credentials: 'include',
         body: JSON.stringify(userPayload)
     });
     if (!res.ok) {
@@ -233,9 +236,10 @@ async function apiCreateUser(userPayload) {
 }
 
 async function apiLogin(credentials) {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: getJsonHeaders(),
+        credentials: 'include',
         body: JSON.stringify(credentials)
     });
     if (!res.ok) {
@@ -248,20 +252,22 @@ async function apiLogin(credentials) {
 
 async function apiGetCollection(collection, query = {}) {
     const queryString = buildQuery(query);
-    const res = await fetch(`${API_BASE}/${collection}${queryString}`, {
+    const res = await fetch(`${API_BASE}/api/${collection}${queryString}`, {
         headers: getAuthHeaders(),
+        credentials: 'include',
     });
     if (!res.ok) throw new Error(`Could not fetch ${collection}`);
     return res.json();
 }
 
 async function apiCreateCollectionItem(collection, payload) {
-    const res = await fetch(`${API_BASE}/${collection}`, {
+    const res = await fetch(`${API_BASE}/api/${collection}`, {
         method: 'POST',
         headers: {
             ...getJsonHeaders(),
             ...getAuthHeaders(),
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
     });
     if (!res.ok) {
@@ -273,12 +279,13 @@ async function apiCreateCollectionItem(collection, payload) {
 }
 
 async function apiUpdateCollectionItem(collection, id, payload) {
-    const res = await fetch(`${API_BASE}/${collection}/${id}`, {
+    const res = await fetch(`${API_BASE}/api/${collection}/${id}`, {
         method: 'PUT',
         headers: {
             ...getJsonHeaders(),
             ...getAuthHeaders(),
         },
+        credentials: 'include',
         body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error(`Could not update ${collection}`);
@@ -287,9 +294,10 @@ async function apiUpdateCollectionItem(collection, id, payload) {
 
 async function apiDeleteCollectionItem(collection, id, query = {}) {
     const queryString = buildQuery(query);
-    const res = await fetch(`${API_BASE}/${collection}/${id}${queryString}`, {
+    const res = await fetch(`${API_BASE}/api/${collection}/${id}${queryString}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
+        credentials: 'include',
     });
     if (!res.ok) throw new Error(`Could not delete ${collection}`);
     return res.json();
@@ -304,9 +312,10 @@ async function apiListItems() {
 async function apiCreateItem(itemPayload) {
     const user = getAuthUser();
     if (!user || !user.email) throw new Error('Not authenticated');
-    const res = await fetch(`${API_BASE}/items`, {
+    const res = await fetch(`${API_BASE}/api/items`, {
         method: 'POST',
         headers: { ...getJsonHeaders(), ...getAuthHeaders() },
+        credentials: 'include',
         body: JSON.stringify({ ...itemPayload, owner: user.email })
     });
     if (!res.ok) throw new Error('Could not create item');
@@ -316,9 +325,10 @@ async function apiCreateItem(itemPayload) {
 async function apiUpdateItem(id, itemPayload) {
     const user = getAuthUser();
     if (!user || !user.email) throw new Error('Not authenticated');
-    const res = await fetch(`${API_BASE}/items/${id}`, {
+    const res = await fetch(`${API_BASE}/api/items/${id}`, {
         method: 'PUT',
         headers: { ...getJsonHeaders(), ...getAuthHeaders() },
+        credentials: 'include',
         body: JSON.stringify({ ...itemPayload, owner: user.email })
     });
     if (!res.ok) throw new Error('Could not update item');
@@ -328,9 +338,10 @@ async function apiUpdateItem(id, itemPayload) {
 async function apiDeleteItem(id) {
     const user = getAuthUser();
     if (!user || !user.email) throw new Error('Not authenticated');
-    const res = await fetch(`${API_BASE}/items/${id}?user=${encodeURIComponent(user.email)}`, {
+    const res = await fetch(`${API_BASE}/api/items/${id}?user=${encodeURIComponent(user.email)}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
+        credentials: 'include',
     });
     if (!res.ok) throw new Error('Could not delete item');
     return res.json();
@@ -480,7 +491,7 @@ async function loginSubmit(event) {
         return;
     }
 
-    setAuthUser({ email: user.email, name: user.name, phone: user.phone });
+    setAuthUser(user);
     if (!remoteAuthSucceeded) {
         clearAuthToken();
     }
@@ -1201,10 +1212,18 @@ function initRouteFeatures() {
 }
 
 // Logout handler
-function logoutUser() {
+async function logoutUser() {
+    try {
+        await fetch(`${API_BASE}/api/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+    } catch (e) {
+        // still clear local state if backend is unavailable
+    }
     clearAuthUser();
     alert('You have been logged out.');
-    window.location.href = '/';
+    window.location.href = '/login';
 }
 
 // In script.js

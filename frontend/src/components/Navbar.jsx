@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-
-const AUTH_KEY = 'trackWiseAuthUser';
+import { useAuth } from '../contexts/AuthContext';
+import { resolveAssetUrl } from '../lib/api';
 
 const navLinks = [
   { label: 'Tracker', to: '/tracker' },
@@ -17,29 +17,17 @@ const inactiveClass =
   'text-white/70 hover:text-white transition-colors duration-150 pb-1 border-b-2 border-transparent';
 
 function Navbar() {
-  const [user, setUser] = useState(null);
+  const { user, loading, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const load = () => {
-      try {
-        const stored = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
-        setUser(stored);
-      } catch {
-        setUser(null);
-      }
-    };
-    load();
-    window.addEventListener('storage', load);
-    return () => window.removeEventListener('storage', load);
-  }, []);
-
-  const logout = () => {
-    localStorage.removeItem(AUTH_KEY);
-    setUser(null);
-    navigate('/');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
+
+  const avatarSrc = user?.avatar || user?.profilePicture;
+  const resolvedAvatar = avatarSrc ? resolveAssetUrl(avatarSrc) : '';
 
   return (
     <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur border-b border-white/5">
@@ -64,13 +52,31 @@ function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          {user ? (
+          {loading ? (
+            <span className="text-sm text-white/50">Loading…</span>
+          ) : user ? (
             <>
-              <span className="text-white/80 text-sm">
-                Hi, <span className="font-semibold">{user.name || 'Learner'}</span>
-              </span>
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 text-sm text-white/80 hover:text-white transition"
+              >
+                {resolvedAvatar ? (
+                  <img
+                    src={resolvedAvatar}
+                    alt=""
+                    className="h-8 w-8 rounded-full border border-white/10 object-cover"
+                  />
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/30 text-xs font-semibold">
+                    {(user.name || 'U').charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span>
+                  Hi, <span className="font-semibold">{user.name || 'Learner'}</span>
+                </span>
+              </Link>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="rounded-full border border-white/10 px-4 py-2 text-sm text-white hover:border-white/40 transition"
               >
                 Logout
@@ -121,12 +127,16 @@ function Navbar() {
             <div className="flex flex-col gap-2 pt-2">
               {user ? (
                 <>
-                  <span className="text-sm text-white/80">
-                    Signed in as {user.name || 'Learner'}
-                  </span>
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileOpen(false)}
+                    className="text-sm text-white/80 hover:text-white"
+                  >
+                    Profile
+                  </Link>
                   <button
                     onClick={() => {
-                      logout();
+                      handleLogout();
                       setMobileOpen(false);
                     }}
                     className="rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:border-white/40 transition"
@@ -161,4 +171,3 @@ function Navbar() {
 }
 
 export default Navbar;
-
