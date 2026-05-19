@@ -195,9 +195,12 @@ async function registerSession(req, res) {
 }
 
 function googleCallbackSuccess(req, res) {
-  const redirectUrl =
-    process.env.GOOGLE_SUCCESS_REDIRECT || `${FRONTEND_URL}/dashboard`;
-  return res.redirect(redirectUrl);
+  const token = signToken({
+    userId: req.user._id,
+    email: req.user.email,
+  });
+
+  return res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
 }
 
 module.exports = {

@@ -9,6 +9,7 @@ const {
   logout,
   getMe,
   updateProfile,
+  googleCallbackSuccess,
 } = require('../controllers/authController');
 
 const requireAuth = require('../middlewares/requireAuth');
@@ -59,9 +60,7 @@ router.get(
   passport.authenticate('google', {
     failureRedirect: `${process.env.FRONTEND_URL}/login`,
   }),
-  (req, res) => {
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
-  }
+  googleCallbackSuccess
 );
 
 

@@ -1,9 +1,22 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../contexts/AuthContext';
 
 function Dashboard() {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+
+  if (token) {
+    localStorage.setItem('token', token);
+    navigate('/dashboard', { replace: true });
+    window.location.reload();
+  }
+}, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 text-white">
