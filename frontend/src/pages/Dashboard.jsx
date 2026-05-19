@@ -12,8 +12,7 @@ useEffect(() => {
   const token = params.get('token');
 
   if (token) {
-    localStorage.setItem('token', token);
-    navigate('/dashboard', { replace: true });
+    localStorage.setItem('trackWiseAuthToken', token);    navigate('/dashboard', { replace: true });
     window.location.reload();
   }
 }, [navigate]);
