@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_URL || '';
+const TOKEN_KEY = 'trackWiseAuthToken';
 
 export function getApiBase() {
   return API_BASE;
@@ -23,6 +24,11 @@ async function parseJsonResponse(res) {
 
 export async function apiFetch(path, options = {}) {
   const headers = { ...(options.headers || {}) };
+  const token = localStorage.getItem(TOKEN_KEY);
+
+if (token) {
+  headers.Authorization = `Bearer ${token}`;
+}
 
   if (
     options.body &&
